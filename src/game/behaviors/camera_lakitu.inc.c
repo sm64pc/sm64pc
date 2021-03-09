@@ -28,10 +28,17 @@ void bhv_camera_lakitu_init(void) {
 static void camera_lakitu_intro_act_trigger_cutscene(void) {
     //! These bounds are slightly smaller than the actual bridge bounds, allowing
     //  the RTA speedrunning method of lakitu skip
+    #ifndef QOL_FIXES
     if (gMarioObject->oPosX > -544.0f && gMarioObject->oPosX < 545.0f && gMarioObject->oPosY > 800.0f
+    #else
+    // not anymore :)
+    if (gMarioObject->oPosX > -555.0f && gMarioObject->oPosX < 555.0f && gMarioObject->oPosY > 800.0f
+    #endif
         && gMarioObject->oPosZ > -2000.0f && gMarioObject->oPosZ < -177.0f
-        && gMarioObject->oPosZ < -177.0f) // always double check your conditions
-    {
+        #ifndef QOL_FIXES
+        && gMarioObject->oPosZ < -177.0f // always double check your conditions
+        #endif
+    ) {
         if (set_mario_npc_dialog(2) == 1) {
             o->oAction = CAMERA_LAKITU_INTRO_ACT_SPAWN_CLOUD;
         }
@@ -61,8 +68,13 @@ static void camera_lakitu_intro_act_spawn_cloud(void) {
  * Circle down to mario, show the dialog, then fly away.
  */
 static void camera_lakitu_intro_act_show_dialog(void) {
+    #ifndef TARGET_WEB
     s16 targetMovePitch;
     s16 targetMoveYaw;
+    #else
+    s16 targetMovePitch = 0;
+    s16 targetMoveYaw = 0;
+    #endif
 
     cur_obj_play_sound_1(SOUND_AIR_LAKITU_FLY);
 

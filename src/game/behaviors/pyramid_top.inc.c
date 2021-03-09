@@ -53,6 +53,9 @@ void bhv_pyramid_top_spinning(void) {
     // with a random velocity and angle.
     if (o->oTimer < 90) {
         pyramidFragment = spawn_object(o, MODEL_DIRT_ANIMATION, bhvPyramidTopFragment);
+#ifdef QOL_FIXES
+        pyramidFragment->activeFlags |= ACTIVE_FLAG_INITIATED_TIME_STOP;
+#endif
         pyramidFragment->oForwardVel = random_float() * 10.0f + 20.0f;
         pyramidFragment->oMoveAngleYaw = random_u16();
         pyramidFragment->oPyramidTopFragmentsScale = 0.8f;
@@ -72,6 +75,9 @@ void bhv_pyramid_top_explode(void) {
     struct Object *pyramidFragment;
     s16 i;
 
+#ifdef QOL_FIXES
+    if (o->oTimer == 0) {
+#endif
     spawn_mist_particles_variable(0, 0, 690);
 
     // Generate 30 pyramid fragments with random properties.
@@ -79,6 +85,9 @@ void bhv_pyramid_top_explode(void) {
         pyramidFragment = spawn_object(
             o, MODEL_DIRT_ANIMATION, bhvPyramidTopFragment
         );
+#ifdef QOL_FIXES
+        pyramidFragment->activeFlags |= ACTIVE_FLAG_INITIATED_TIME_STOP;
+#endif
         pyramidFragment->oForwardVel = random_float() * 50 + 80;
         pyramidFragment->oVelY = random_float() * 80 + 20;
         pyramidFragment->oMoveAngleYaw = random_u16();
@@ -86,8 +95,18 @@ void bhv_pyramid_top_explode(void) {
         pyramidFragment->oGravity = random_float() * 2 + 5;
     }
 
+#ifdef QOL_FIXES
+    cur_obj_disable();
+    }
+
+    if (o->oTimer == 30) {
+        disable_time_stop_including_mario();
+#endif
     // Deactivate the pyramid top.
     o->activeFlags = ACTIVE_FLAG_DEACTIVATED;
+#ifdef QOL_FIXES
+    }
+#endif
 }
 
 void bhv_pyramid_top_loop(void) {
@@ -95,6 +114,10 @@ void bhv_pyramid_top_loop(void) {
         case PYRAMID_TOP_ACT_CHECK_IF_SOLVED:
             if (o->oPyramidTopPillarsTouched == 4) {
                 play_puzzle_jingle();
+                #ifdef QOL_FIXES
+                cutscene_object(CUTSCENE_SSL_PYRAMID_EXPLODE, o);
+                enable_time_stop_including_mario();
+                #endif
                 o->oAction = PYRAMID_TOP_ACT_SPINNING;
             }
             break;

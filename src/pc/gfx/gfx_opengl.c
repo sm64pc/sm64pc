@@ -172,6 +172,9 @@ static const char *shader_item_to_str(uint32_t item, bool with_alpha, bool only_
                 return "texVal1.a";
         }
     }
+    #ifdef TARGET_WEB
+    return "0";
+    #endif
 }
 
 static void append_formula(char *buf, size_t *len, uint8_t c[2][4], bool do_single, bool do_multiply, bool do_mix, bool with_alpha, bool only_alpha, bool opt_alpha) {
@@ -378,7 +381,7 @@ static struct ShaderProgram *gfx_opengl_create_and_load_new_shader(uint32_t shad
     }
 
     if (opt_alpha && opt_noise) 
-        append_line(fs_buf, &fs_len, "texel.a *= floor(random(floor(vec3(gl_FragCoord.xy, frame_count))) + 0.5);");
+        append_line(fs_buf, &fs_len, "texel.a *= floor(clamp(random(floor(vec3(gl_FragCoord.xy, frame_count))) + texel.a, 0.0, 1.0));");
 
     if (opt_alpha) {
         append_line(fs_buf, &fs_len, "gl_FragColor = texel;");
@@ -390,11 +393,13 @@ static struct ShaderProgram *gfx_opengl_create_and_load_new_shader(uint32_t shad
     vs_buf[vs_len] = '\0';
     fs_buf[fs_len] = '\0';
 
-    /*puts("Vertex shader:");
+    #ifdef DEBUG
+    puts("Vertex shader:");
     puts(vs_buf);
     puts("Fragment shader:");
     puts(fs_buf);
-    puts("End");*/
+    puts("End");
+    #endif
 
     const GLchar *sources[2] = { vs_buf, fs_buf };
     const GLint lengths[2] = { vs_len, fs_len };
@@ -522,14 +527,14 @@ static GLuint gfx_opengl_new_texture(void) {
 }
 
 static void gfx_opengl_select_texture(int tile, GLuint texture_id) {
-     opengl_tex[tile] = tex_cache + texture_id;
-     opengl_curtex = tile;
-     glActiveTexture(GL_TEXTURE0 + tile);
-     glBindTexture(GL_TEXTURE_2D, opengl_tex[tile]->gltex);
-     gfx_opengl_set_texture_uniforms(opengl_prg, tile);
+    opengl_tex[tile] = tex_cache + texture_id;
+    opengl_curtex = tile;
+    glActiveTexture(GL_TEXTURE0 + tile);
+    glBindTexture(GL_TEXTURE_2D, opengl_tex[tile]->gltex);
+    gfx_opengl_set_texture_uniforms(opengl_prg, tile);
 }
 
-static void gfx_opengl_upload_texture(uint8_t *rgba32_buf, int width, int height) {
+static void gfx_opengl_upload_texture(const uint8_t *rgba32_buf, int width, int height) {
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, rgba32_buf);
     opengl_tex[opengl_curtex]->size[0] = width;
     opengl_tex[opengl_curtex]->size[1] = height;
@@ -595,7 +600,9 @@ static void gfx_opengl_set_use_alpha(bool use_alpha) {
 }
 
 static void gfx_opengl_draw_triangles(float buf_vbo[], size_t buf_vbo_len, size_t buf_vbo_num_tris) {
-    //printf("flushing %d tris\n", buf_vbo_num_tris);
+    #ifdef DEBUG
+    printf("flushing %d tris\n", buf_vbo_num_tris);
+    #endif
     glBufferData(GL_ARRAY_BUFFER, sizeof(float) * buf_vbo_len, buf_vbo, GL_STREAM_DRAW);
     glDrawArrays(GL_TRIANGLES, 0, 3 * buf_vbo_num_tris);
 }

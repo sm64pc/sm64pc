@@ -49,8 +49,11 @@ const LevelScript level_vcutm_entry[] = {
     MARIO(/*model*/ MODEL_MARIO, /*behParam*/ 0x00000001, /*beh*/ bhvMario),
     JUMP_LINK(script_func_global_1),
     JUMP_LINK(script_func_global_9),
-    LOAD_MODEL_FROM_GEO(MODEL_VCUTM_SEESAW_PLATFORM, vcutm_geo_0001F0),
-    LOAD_MODEL_FROM_GEO(MODEL_VCUTM_WARP_PIPE,       warp_pipe_geo),
+    LOAD_MODEL_FROM_GEO(MODEL_VCUTM_SEESAW_PLATFORM,   vcutm_geo_0001F0),
+    #ifdef QOL_FIXES
+    LOAD_MODEL_FROM_GEO(MODEL_VCUTM_CHECKERBOARD_PLATFORM_SPAWNER, NULL),
+    #endif
+    LOAD_MODEL_FROM_GEO(MODEL_VCUTM_WARP_PIPE,            warp_pipe_geo),
 
     AREA(/*index*/ 1, vcutm_geo_000208),
         OBJECT(/*model*/ MODEL_NONE, /*pos*/ -6143, 6734, -6143, /*angle*/ 0, 0, 0, /*behParam*/ 0x000A0000, /*beh*/ bhvAirborneWarp),

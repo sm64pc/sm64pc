@@ -78,12 +78,19 @@ void bowling_ball_set_waypoints(void) {
 
 void bhv_bowling_ball_roll_loop(void) {
     s16 collisionFlags;
+    #ifndef QOL_FIXES
     s32 sp18;
+    #else
+    s32 sp18 = 0;
+    #endif
+    #ifdef TARGET_WEB
+    sp18 = 0;
+    #endif
 
     bowling_ball_set_waypoints();
     collisionFlags = object_step();
 
-    //! Uninitialzed parameter, but the parameter is unused in the called function
+    //! Uninitialized parameter, but the parameter is unused in the called function
     sp18 = cur_obj_follow_path(sp18);
 
     o->oBowlingBallTargetYaw = o->oPathedTargetYaw;
@@ -108,11 +115,18 @@ void bhv_bowling_ball_roll_loop(void) {
 }
 
 void bhv_bowling_ball_initializeLoop(void) {
+    #ifndef QOL_FIXES
     s32 sp1c;
+    #else
+    s32 sp1c = 0;
+    #endif
+    #ifdef TARGET_WEB
+    sp1c = 0;
+    #endif
 
     bowling_ball_set_waypoints();
 
-    //! Uninitialzed parameter, but the parameter is unused in the called function
+    //! Uninitialized parameter, but the parameter is unused in the called function
     sp1c = cur_obj_follow_path(sp1c);
 
     o->oMoveAngleYaw = o->oPathedTargetYaw;
@@ -260,7 +274,11 @@ void bhv_free_bowling_ball_roll_loop(void) {
         cur_obj_play_sound_1(SOUND_ENV_UNKNOWN2);
     }
 
+    #ifndef QOL_FIXES
     if ((collisionFlags & OBJ_COL_FLAG_GROUNDED) && !(collisionFlags & OBJ_COL_FLAGS_LANDED))
+    #else
+    if ((collisionFlags & OBJ_COL_FLAG_GROUNDED) && !(collisionFlags & OBJ_COL_FLAG_NO_Y_VEL))
+    #endif
         cur_obj_play_sound_2(SOUND_GENERAL_QUIET_POUND1_LOWPRIO);
 
     if (!is_point_within_radius_of_mario(o->oPosX, o->oPosY, o->oPosZ, 6000)) {

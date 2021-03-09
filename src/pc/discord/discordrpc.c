@@ -1,4 +1,5 @@
 #include <stdbool.h>
+#include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
 #include <time.h>
@@ -221,22 +222,22 @@ static void set_state(void) {
 }
 
 void set_logo(void) {
-    if (lastCourseNum)
-        snprintf(largeImageKey, sizeof(largeImageKey), "%d", lastCourseNum);
-    else 
+    if (lastCourseNum) {
+        if (snprintf(largeImageKey, sizeof(largeImageKey), "%d", lastCourseNum) < 0)
+            abort();
+    } else { 
         strcpy(largeImageKey, "0");
+    }
 
-    /*
-    if (lastActNum)
-        snprintf(smallImageKey, sizeof(largeImageKey), "%d", lastActNum);
-    else
+    if (lastActNum) {
+        if (snprintf(smallImageKey, sizeof(smallImageKey), "%d", lastActNum) < 0)
+            abort();
+    } else {
         smallImageKey[0] = '\0';
-    */
+    }
 
     discordRichPresence.largeImageKey = largeImageKey;
-    //discordRichPresence.largeImageText = "";
-    //discordRichPresence.smallImageKey = smallImageKey;
-    //discordRichPresence.smallImageText = "";
+    discordRichPresence.smallImageKey = smallImageKey;
 }
 
 void discord_update_rich_presence(void) {

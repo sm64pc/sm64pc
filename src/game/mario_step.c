@@ -8,6 +8,9 @@
 #include "game_init.h"
 #include "interaction.h"
 #include "mario_step.h"
+#ifdef QOL_FIXES
+#include "object_list_processor.h"
+#endif
 
 static s16 sMovingSandSpeeds[] = { 12, 8, 4, 0 };
 
@@ -15,6 +18,10 @@ struct Surface gWaterSurfacePseudoFloor = {
     SURFACE_VERY_SLIPPERY, 0,    0,    0, 0, 0, { 0, 0, 0 }, { 0, 0, 0 }, { 0, 0, 0 },
     { 0.0f, 1.0f, 0.0f },  0.0f, NULL,
 };
+
+#ifdef QOL_FIXES
+static struct Object *sTrampoline;
+#endif
 
 /**
  * Always returns zero. This may have been intended
@@ -27,7 +34,11 @@ struct Surface gWaterSurfacePseudoFloor = {
  * and if so return a higher value than 0.
  */
 f32 get_additive_y_vel_for_jumps(void) {
+    #ifndef QOL_FIXES
     return 0.0f;
+    #else
+    return (sTrampoline != NULL) ? sTrampoline->oBetaTrampolineAdditiveYVel : 0.0f;
+    #endif
 }
 
 /**
@@ -50,6 +61,9 @@ void stub_mario_step_1(UNUSED struct MarioState *x) {
  * or to set a variable with its intended additive Y vel.
  */
 void stub_mario_step_2(void) {
+    #ifdef QOL_FIXES
+    sTrampoline = gCurrentObject;
+    #endif
 }
 
 void transfer_bully_speed(struct BullyCollisionData *obj1, struct BullyCollisionData *obj2) {
@@ -57,8 +71,27 @@ void transfer_bully_speed(struct BullyCollisionData *obj1, struct BullyCollision
     f32 rz = obj2->posZ - obj1->posZ;
 
     //! Bully NaN crash
+    #ifndef QOL_FIXES
     f32 projectedV1 = (rx * obj1->velX + rz * obj1->velZ) / (rx * rx + rz * rz);
     f32 projectedV2 = (-rx * obj2->velX - rz * obj2->velZ) / (rx * rx + rz * rz);
+    #else
+    f32 projectedV1 = 0.0f;
+    f32 projectedV2 = 0.0f;
+    if ((rx * obj1->velX + rz * obj1->velZ) / (rx * rx + rz * rz) != NAN
+    && (-rx * obj2->velX - rz * obj2->velZ) / (rx * rx + rz * rz) != NAN) {
+        projectedV1 = (rx * obj1->velX + rz * obj1->velZ) / (rx * rx + rz * rz);
+        projectedV2 = (-rx * obj2->velX - rz * obj2->velZ) / (rx * rx + rz * rz);
+    } else if ((rx * obj1->velX + rz * obj1->velZ) / (rx * rx + rz * rz) == NAN) {
+        projectedV1 = 0.0f;
+        projectedV2 = (-rx * obj2->velX - rz * obj2->velZ) / (rx * rx + rz * rz);
+    } else if ((-rx * obj2->velX - rz * obj2->velZ) / (rx * rx + rz * rz) == NAN) {
+        projectedV1 = (rx * obj1->velX + rz * obj1->velZ) / (rx * rx + rz * rz);
+        projectedV2 = 0.0f;
+    } else {
+        projectedV1 = 0.0f;
+        projectedV2 = 0.0f;
+    }
+    #endif
 
     // Kill speed along r. Convert one object's speed along r and transfer it to
     // the other object.
@@ -281,7 +314,12 @@ static s32 perform_ground_quarter_step(struct MarioState *m, Vec3f nextPos) {
     if ((m->action & ACT_FLAG_RIDING_SHELL) && floorHeight < waterLevel) {
         floorHeight = waterLevel;
         floor = &gWaterSurfacePseudoFloor;
+        #ifndef QOL_FIXES
         floor->originOffset = floorHeight; //! Wrong origin offset (no effect)
+        #else
+        // this might have been waterLevel instead
+        floor->originOffset = waterLevel;
+        #endif
     }
 
     if (nextPos[1] > floorHeight + 100.0f) {
@@ -424,7 +462,12 @@ s32 perform_air_quarter_step(struct MarioState *m, Vec3f intendedPos, u32 stepAr
     if ((m->action & ACT_FLAG_RIDING_SHELL) && floorHeight < waterLevel) {
         floorHeight = waterLevel;
         floor = &gWaterSurfacePseudoFloor;
+        #ifndef QOL_FIXES
         floor->originOffset = floorHeight; //! Incorrect origin offset (no effect)
+        #else
+        // this might have been waterLevel instead
+        floor->originOffset = waterLevel;
+        #endif
     }
 
     //! This check uses f32, but findFloor uses short (overflow jumps)
@@ -439,6 +482,11 @@ s32 perform_air_quarter_step(struct MarioState *m, Vec3f intendedPos, u32 stepAr
         //! When ceilHeight - floorHeight <= 160, the step result says that
         // Mario landed, but his movement is cancelled and his referenced floor
         // isn't updated (pedro spots)
+        #ifdef QOL_FIXES
+        m->pos[0] = nextPos[0];
+        m->pos[2] = nextPos[2];
+        m->floor = floor;
+        #endif
         m->pos[1] = floorHeight;
         return AIR_STEP_LANDED;
     }

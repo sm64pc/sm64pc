@@ -227,7 +227,7 @@ s32 sGameLoopTicked = 0;
 #define YOSHI 10
 #define _ 0xFF
 
-#ifdef VERSION_JP
+#if BUGFIX_DIALOG_SOUND_KTQ_WIN
 #define DIFF KOOPA
 #else
 #define DIFF TUXIE
@@ -621,8 +621,11 @@ const char unusedErrorStr2[] = "specchg error\n";
 /**
  * Fade out a sequence player
  */
-#if defined(VERSION_EU)
+#ifdef VERSION_EU
 
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wint-to-pointer-cast"
+#pragma GCC diagnostic ignored "-Wpointer-to-int-cast"
 void audio_reset_session_eu(s32 presetId) {
     OSMesg mesg;
 
@@ -633,6 +636,7 @@ void audio_reset_session_eu(s32 presetId) {
         osRecvMesg(OSMesgQueues[3], &mesg, OS_MESG_BLOCK);
     }
 }
+#pragma GCC diagnostic pop
 
 #else
 

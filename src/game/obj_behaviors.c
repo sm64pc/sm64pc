@@ -182,7 +182,9 @@ s32 turn_obj_away_from_steep_floor(struct Surface *objFloor, f32 floorY, f32 obj
 
     if (objFloor == NULL) {
         //! (OOB Object Crash) TRUNC overflow exception after 36 minutes
+        #ifndef QOL_FIXES
         o->oMoveAngleYaw += 32767.999200000002; /* ¯\_(ツ)_/¯ */
+        #endif
         return FALSE;
     }
 
@@ -283,7 +285,11 @@ void calc_new_obj_vel_and_pos_y(struct Surface *objFloor, f32 objFloorY, f32 obj
     }
 
     //! (Obj Position Crash) If you got an object with height past 2^31, the game would crash.
+    #ifndef QOL_FIXES
     if ((s32) o->oPosY >= (s32) objFloorY && (s32) o->oPosY < (s32) objFloorY + 37) {
+    #else
+    if ((s64) o->oPosY >= (s64) objFloorY && (s64) o->oPosY < (s64) objFloorY + 37) {
+    #endif
         obj_orient_graph(o, floor_nX, floor_nY, floor_nZ);
 
         // Adds horizontal component of gravity for horizontal speed.
@@ -525,12 +531,16 @@ s32 is_point_close_to_object(struct Object *obj, f32 x, f32 y, f32 z, s32 dist) 
 /**
  * Sets an object as visible if within a certain distance of Mario's graphical position.
  */
+#ifndef NODRAWINGDISTANCE
 void set_object_visibility(struct Object *obj, s32 dist) {
+#else
+void set_object_visibility(struct Object *obj, UNUSED s32 dist) {
+#endif
+#ifndef NODRAWINGDISTANCE
     f32 objX = obj->oPosX;
     f32 objY = obj->oPosY;
     f32 objZ = obj->oPosZ;
 
-#ifndef NODRAWINGDISTANCE
     if (is_point_within_radius_of_mario(objX, objY, objZ, dist) == TRUE) {
 #endif
         obj->header.gfx.node.flags &= ~GRAPH_RENDER_INVISIBLE;
@@ -720,6 +730,9 @@ void obj_check_floor_death(s16 collisionFlags, struct Surface *floor) {
                 o->oAction = OBJ_ACT_LAVA_DEATH;
                 break;
             //! @BUG Doesn't check for the vertical wind death floor.
+            #ifdef QOL_FIXES
+            case SURFACE_VERTICAL_WIND:
+            #endif
             case SURFACE_DEATH_PLANE:
                 o->oAction = OBJ_ACT_DEATH_PLANE_DEATH;
                 break;

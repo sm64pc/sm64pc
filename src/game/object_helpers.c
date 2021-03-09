@@ -1261,6 +1261,9 @@ static s32 cur_obj_move_xz(f32 steepSlopeNormalY, s32 careAboutEdgesAndSteepSlop
         o->oPosZ = intendedZ;
         //! Returning FALSE but moving anyway (not exploitable; return value is
         //  never used)
+        #ifdef QOL_FIXES
+        return TRUE;
+        #endif
     }
 
     // We are likely trying to move onto a steep upward slope
@@ -1387,7 +1390,11 @@ void cur_obj_move_y(f32 gravity, f32 bounciness, f32 buoyancy) {
     }
 }
 
+#ifndef TARGET_WEB
 static void stub_obj_helpers_1(void) {
+#else
+UNUSED static void stub_obj_helpers_1(void) {
+#endif
 }
 
 static s32 clear_move_flag(u32 *bitSet, s32 flag) {
@@ -1748,8 +1755,12 @@ static void cur_obj_update_floor(void) {
             o->oMoveFlags |= OBJ_MOVE_ABOVE_LAVA;
         }
 #ifndef VERSION_JP
+        #ifndef QOL_FIXES
         else if (floor->type == SURFACE_DEATH_PLANE) {
             //! This misses SURFACE_VERTICAL_WIND (and maybe SURFACE_WARP)
+        #else
+        else if (floor->type == SURFACE_DEATH_PLANE || floor->type == SURFACE_VERTICAL_WIND || floor->type == SURFACE_WARP) {
+        #endif
             o->oMoveFlags |= OBJ_MOVE_ABOVE_DEATH_BARRIER;
         }
 #endif
@@ -2247,7 +2258,11 @@ void bhv_dust_smoke_loop(void) {
     o->oSmokeTimer++;
 }
 
+#ifndef TARGET_WEB
 static void stub_obj_helpers_2(void) {
+#else
+UNUSED static void stub_obj_helpers_2(void) {
+#endif
 }
 
 s32 cur_obj_set_direction_table(s8 *a0) {
@@ -2273,7 +2288,11 @@ s32 cur_obj_progress_direction_table(void) {
     return spF;
 }
 
+#ifndef TARGET_WEB
 void stub_obj_helpers_3(UNUSED s32 sp0, UNUSED s32 sp4) {
+#else
+UNUSED void stub_obj_helpers_3(UNUSED s32 sp0, UNUSED s32 sp4) {
+#endif
 }
 
 void cur_obj_scale_over_time(s32 a0, s32 a1, f32 sp10, f32 sp14) {
@@ -2300,7 +2319,11 @@ void cur_obj_set_pos_to_home_with_debug(void) {
     cur_obj_scale(gDebugInfo[5][3] / 100.0f + 1.0l);
 }
 
+#ifndef TARGET_WEB
 void stub_obj_helpers_4(void) {
+#else
+UNUSED void stub_obj_helpers_4(void) {
+#endif
 }
 
 s32 cur_obj_is_mario_on_platform(void) {
@@ -2395,7 +2418,11 @@ s32 is_item_in_array(s8 item, s8 *array) {
     return FALSE;
 }
 
+#ifndef TARGET_WEB
 static void stub_obj_helpers_5(void) {
+#else
+UNUSED static void stub_obj_helpers_5(void) {
+#endif
 }
 
 void bhv_init_room(void) {
@@ -2590,6 +2617,7 @@ s32 cur_obj_update_dialog(s32 actionArg, s32 dialogFlags, s32 dialogID, UNUSED s
     UNUSED s32 doneTurning = TRUE;
 
     switch (o->oDialogState) {
+#ifndef QOL_FIXES
 #ifdef VERSION_JP
         case DIALOG_UNK1_ENABLE_TIME_STOP:
             //! We enable time stop even if Mario is not ready to speak. This
@@ -2601,6 +2629,20 @@ s32 cur_obj_update_dialog(s32 actionArg, s32 dialogFlags, s32 dialogID, UNUSED s
                 o->oDialogState++;
             }
             break;
+#else
+        case DIALOG_UNK1_ENABLE_TIME_STOP:
+            // Patched :(
+            // Wait for Mario to be ready to speak, and then enable time stop
+            if (mario_ready_to_speak() || gMarioState->action == ACT_READING_NPC_DIALOG) {
+                gTimeStopState |= TIME_STOP_ENABLED;
+                o->activeFlags |= ACTIVE_FLAG_INITIATED_TIME_STOP;
+                o->oDialogState++;
+            } else {
+                break;
+            }
+            // Fall through so that Mario's action is interrupted immediately
+            // after time is stopped
+#endif
 #else
         case DIALOG_UNK1_ENABLE_TIME_STOP:
             // Patched :(
@@ -2667,7 +2709,7 @@ s32 cur_obj_update_dialog_with_cutscene(s32 actionArg, s32 dialogFlags, s32 cuts
     s32 doneTurning = TRUE;
 
     switch (o->oDialogState) {
-#ifdef VERSION_JP
+#if (defined(VERSION_JP) && !defined(QOL_FIXES))
         case DIALOG_UNK2_ENABLE_TIME_STOP:
             //! We enable time stop even if Mario is not ready to speak. This
             //  allows us to move during time stop as long as Mario never enters

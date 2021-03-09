@@ -16,6 +16,9 @@
 #include "paintings.h"
 #include "save_file.h"
 #include "segment2.h"
+#ifdef QOL_FIXES
+#include "include/libc/math.h"
+#endif
 
 /**
  * @file paintings.c
@@ -214,10 +217,19 @@ void stop_other_paintings(s16 *idptr, struct Painting *paintingGroup[]) {
 f32 painting_mario_y(struct Painting *painting) {
     //! Unnecessary use of double constants
     // Add 50 to make the ripple closer to Mario's center of mass.
+    #ifndef QOL_FIXES
     f32 relY = gPaintingMarioYPos - painting->posY + 50.0;
+    #else
+    f32 relY = gPaintingMarioYPos - painting->posY + 50.0f;
+    #endif
 
+    #ifndef QOL_FIXES
     if (relY < 0.0) {
         relY = 0.0;
+    #else
+    if (relY < 0.0f) {
+        relY = 0.0f;
+    #endif
     } else if (relY > painting->size) {
         relY = painting->size;
     }
@@ -254,6 +266,9 @@ f32 painting_ripple_y(struct Painting *painting, s8 ySource) {
             return painting->size / 2.0; // some concentric ripples don't care about Mario
             break;
     }
+    #ifdef TARGET_WEB
+    return 0;
+    #endif
 }
 
 /**
@@ -278,7 +293,13 @@ f32 painting_nearest_4th(struct Painting *painting) {
         return secondQuarter;
     } else if (painting->floorEntered & ENTER_RIGHT) {
         return thirdQuarter;
+    #ifndef TARGET_WEB
     }
+    #else
+    } else {
+        return 0;
+    }
+    #endif
 }
 
 /**
@@ -310,6 +331,9 @@ f32 painting_ripple_x(struct Painting *painting, s8 xSource) {
             return painting->size / 2.0;
             break;
     }
+    #ifdef TARGET_WEB
+    return 0;
+    #endif
 }
 
 /**
@@ -578,7 +602,15 @@ void painting_update_ripple_state(struct Painting *painting) {
         //! 16777216 (1 << 24), at which point it will freeze (due to floating-point
         //! imprecision?) and the painting will stop rippling. This happens to HMC, DDD, and
         //! CotMC. This happens on Wii VC. Untested on N64 and Wii U VC.
+        #ifndef QOL_FIXES
         painting->rippleTimer += 1.0;
+        #else
+        if (painting->rippleTimer >= 16777216.0) {
+            painting->rippleTimer = 0.0;
+        } else {
+            painting->rippleTimer += 1.0;
+        }
+        #endif
     }
     if (painting->rippleTrigger == RIPPLE_TRIGGER_PROXIMITY) {
         // if the painting is barely rippling, make it stop rippling
@@ -633,7 +665,11 @@ s16 calculate_ripple_at_point(struct Painting *painting, f32 posX, f32 posY) {
     } else {
         // use a cosine wave to make the ripple go up and down,
         // scaled by the painting's ripple magnitude
+        #ifndef QOL_FIXES
         f32 rippleZ = rippleMag * cosf(rippleRate * (2 * M_PI) * (rippleTimer - rippleDistance));
+        #else
+        f32 rippleZ = rippleMag * cosf(rippleRate * (2 * M__PI) * (rippleTimer - rippleDistance));
+        #endif
 
         // round it to an int and return it
         return round_float(rippleZ);

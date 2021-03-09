@@ -276,7 +276,7 @@ void render_generic_char(u8 c) {
 
 #ifdef VERSION_EU
 static void alloc_ia4_tex_from_i1(u8 *out, u8 *in, s16 width, s16 height) {
-    u32 size = (u32) width * (u32) height;
+    UNUSED u32 size = (u32) width * (u32) height;
     s32 inPos;
     s16 outPos = 0;
     u8 bitMask;
@@ -414,7 +414,13 @@ void print_generic_string(s16 x, s16 y, const u8 *str) {
             case DIALOG_CHAR_LOWER_A_UMLAUT:
                 render_lowercase_diacritic(&xCoord, &yCoord, ASCII_TO_DIALOG('a'), str[strPos] & 0xF);
                 break;
+            #ifndef QOL_FIXES
             case DIALOG_CHAR_UPPER_A_UMLAUT: // @bug grave and circumflex (0x64-0x65) are absent here
+            #else
+            case DIALOG_CHAR_UPPER_A_GRAVE:
+            case DIALOG_CHAR_UPPER_A_CIRCUMFLEX:
+            case DIALOG_CHAR_UPPER_A_UMLAUT:
+            #endif
                 render_uppercase_diacritic(&xCoord, &yCoord, ASCII_TO_DIALOG('A'), str[strPos] & 0xF);
                 break;
             case DIALOG_CHAR_LOWER_E_GRAVE:
@@ -434,14 +440,25 @@ void print_generic_string(s16 x, s16 y, const u8 *str) {
             case DIALOG_CHAR_LOWER_U_UMLAUT:
                 render_lowercase_diacritic(&xCoord, &yCoord, ASCII_TO_DIALOG('u'), str[strPos] & 0xF);
                 break;
+            #ifndef QOL_FIXES
             case DIALOG_CHAR_UPPER_U_UMLAUT: // @bug grave and circumflex (0x84-0x85) are absent here
+            #else
+            case DIALOG_CHAR_UPPER_U_GRAVE:
+            case DIALOG_CHAR_UPPER_U_CIRCUMFLEX:
+            case DIALOG_CHAR_UPPER_U_UMLAUT:
+            #endif
                 render_uppercase_diacritic(&xCoord, &yCoord, ASCII_TO_DIALOG('U'), str[strPos] & 0xF);
                 break;
             case DIALOG_CHAR_LOWER_O_CIRCUMFLEX:
             case DIALOG_CHAR_LOWER_O_UMLAUT:
                 render_lowercase_diacritic(&xCoord, &yCoord, ASCII_TO_DIALOG('o'), str[strPos] & 0xF);
                 break;
+            #ifndef QOL_FIXES
             case DIALOG_CHAR_UPPER_O_UMLAUT: // @bug circumflex (0x95) is absent here
+            #else
+            case DIALOG_CHAR_UPPER_O_CIRCUMFLEX:
+            case DIALOG_CHAR_UPPER_O_UMLAUT:
+            #endif
                 render_uppercase_diacritic(&xCoord, &yCoord, ASCII_TO_DIALOG('O'), str[strPos] & 0xF);
                 break;
             case DIALOG_CHAR_LOWER_I_CIRCUMFLEX:
@@ -589,11 +606,15 @@ void print_hud_lut_string(s8 hudLUT, s16 x, s16 y, const u8 *str) {
 #endif
 #if defined(VERSION_US) || defined(VERSION_SH)
         if (str[strPos] == GLOBAL_CHAR_SPACE) {
+            #ifndef QOL_FIXES
             if (0) //! dead code
             {
             }
+            #endif
             curX += 8;
+            #ifndef QOL_FIXES
             ; //! useless statement
+            #endif
         } else {
 #endif
             gDPPipeSync(gDisplayListHead++);
@@ -751,6 +772,7 @@ void handle_menu_scrolling(s8 scrollDirection, s8 *currentIndex, s8 minIndex, s8
     }
 
     if (((index ^ gMenuHoldKeyIndex) & index) == 2) {
+        #ifndef QOL_FIXES
         if (currentIndex[0] == maxIndex) {
             //! Probably originally a >=, but later replaced with an == and an else statement.
             currentIndex[0] = maxIndex;
@@ -758,15 +780,31 @@ void handle_menu_scrolling(s8 scrollDirection, s8 *currentIndex, s8 minIndex, s8
             play_sound(SOUND_MENU_CHANGE_SELECT, gDefaultSoundArgs);
             currentIndex[0]++;
         }
+        #else
+        // if <=, this could cause an OOB array access and crash. Use < instead here to fix this.
+        // >= is incorrect and will cause the menu to not function correctly
+        if (currentIndex[0] < maxIndex) {
+            play_sound(SOUND_MENU_CHANGE_SELECT, gDefaultSoundArgs);
+            currentIndex[0]++;
+        }
+        #endif
     }
 
     if (((index ^ gMenuHoldKeyIndex) & index) == 1) {
+        #ifndef QOL_FIXES
         if (currentIndex[0] == minIndex) {
             // Same applies to here as above
         } else {
             play_sound(SOUND_MENU_CHANGE_SELECT, gDefaultSoundArgs);
             currentIndex[0]--;
         }
+        #else
+        // if >=, this could cause an OOB array access and crash. Use > instead here to fix this.
+        if (currentIndex[0] > minIndex) {
+            play_sound(SOUND_MENU_CHANGE_SELECT, gDefaultSoundArgs);
+            currentIndex[0]--;
+        }
+        #endif
     }
 
     if (gMenuHoldKeyTimer == 10) {
@@ -809,10 +847,14 @@ s16 get_str_x_pos_from_center_scale(s16 centerPos, u8 *str, f32 scale) {
         //! EU checks for dakuten and handakuten despite dialog code unable to handle it
         if (str[strPos] == DIALOG_CHAR_SPACE) {
             spacesWidth += 1.0;
+        #if (defined(VERSION_EU) && !defined(QOL_FIXES)) || defined(VERSION_JP) || defined(VERSION_SH)
         } else if (str[strPos] != DIALOG_CHAR_DAKUTEN
                    && str[strPos] != DIALOG_CHAR_PERIOD_OR_HANDAKUTEN) {
             charsWidth += 1.0;
         }
+        #elif (defined(VERSION_EU) && defined(QOL_FIXES))
+        }
+        #endif
         strPos++;
     }
     // return the x position of where the string starts as half the string's
@@ -2176,6 +2218,20 @@ u8 gTextCourseArr[][7] = {
     { TEXT_COURSE_FR },
     { TEXT_COURSE_DE }
 };
+#ifdef QOL_FIXES
+
+u8 gTextCatchArr[][8] = {
+    { TEXT_CATCH },
+    { TEXT_CATCH_FR },
+    { TEXT_CATCH_DE }
+};
+
+u8 gTextClearArr[][8] = {
+    { TEXT_CLEAR },
+    { TEXT_CLEAR_FR },
+    { TEXT_CLEAR_DE }
+};
+#endif
 #endif
 
 #if defined(VERSION_JP) || defined(VERSION_SH)
@@ -2781,7 +2837,11 @@ void print_hud_course_complete_coins(s16 x, s16 y) {
             gCourseCompleteCoins++;
             play_sound(SOUND_MENU_YOSHI_GAIN_LIVES, gDefaultSoundArgs);
 
+            #ifndef QOL_FIXES
             if (gCourseCompleteCoins == 50 || gCourseCompleteCoins == 100 || gCourseCompleteCoins == 150) {
+            #else
+            if (gCourseCompleteCoins % 50 == 0) {
+            #endif
                 play_sound(SOUND_GENERAL_COLLECT_1UP, gDefaultSoundArgs);
                 gMarioState[0].numLives++;
             }
@@ -2825,14 +2885,24 @@ void render_course_complete_lvl_info_and_hud_str(void) {
     u8 textCourse[] = { TEXT_COURSE };
     u8 textCatch[] = { TEXT_CATCH };
     u8 textClear[] = { TEXT_CLEAR };
-#elif defined(VERSION_EU)
+#elif defined(VERSION_EU) && !defined(QOL_FIXES)
     UNUSED u8 textCatch[] = { TEXT_CATCH }; // unused in EU
     u8 textSymStar[] = { GLYPH_STAR, GLYPH_SPACE };
 #define textCourse gTextCourseArr[gInGameLanguage]
-#else
+#elif defined(VERSION_US) && !defined(QOL_FIXES)
     u8 textCourse[] = { TEXT_COURSE };
     UNUSED u8 textCatch[] = { TEXT_CATCH }; // unused in US
     UNUSED u8 textClear[] = { TEXT_CLEAR };
+    u8 textSymStar[] = { GLYPH_STAR, GLYPH_SPACE };
+#elif defined(VERSION_EU) && defined(QOL_FIXES)
+    u8 textSymStar[] = { GLYPH_STAR, GLYPH_SPACE };
+#define textCatch gTextCatchArr[gInGameLanguage]
+#define textCourse gTextCourseArr[gInGameLanguage]
+#define textClear gTextClearArr[gInGameLanguage]
+#else
+    u8 textCourse[] = { TEXT_COURSE };
+    u8 textCatch[] = { TEXT_CATCH };
+    u8 textClear[] = { TEXT_CLEAR };
     u8 textSymStar[] = { GLYPH_STAR, GLYPH_SPACE };
 #endif
 
@@ -2890,12 +2960,12 @@ void render_course_complete_lvl_info_and_hud_str(void) {
         centerX = get_str_x_pos_from_center(153, name, 12.0f);
 #endif
         print_generic_string(TXT_NAME_X1, 130, name);
-#ifndef VERSION_EU
+#if !defined(VERSION_EU) || defined(QOL_FIXES)
         print_generic_string(TXT_CLEAR_X1, 130, textClear);
 #endif
         gDPSetEnvColor(gDisplayListHead++, 255, 255, 255, gDialogTextAlpha);
         print_generic_string(TXT_NAME_X2, 132, name);
-#ifndef VERSION_EU
+#if !defined(VERSION_EU) || defined(QOL_FIXES)
         print_generic_string(TXT_CLEAR_X2, 132, textClear);
 #endif
         gSPDisplayList(gDisplayListHead++, dl_ia_text_end);
@@ -2916,12 +2986,12 @@ void render_course_complete_lvl_info_and_hud_str(void) {
     gSPDisplayList(gDisplayListHead++, dl_ia_text_begin);
     gDPSetEnvColor(gDisplayListHead++, 0, 0, 0, gDialogTextAlpha);
     print_generic_string(76, 145, name);
-#if defined(VERSION_JP) || defined(VERSION_SH)
+#if defined(VERSION_JP) || defined(VERSION_SH) || defined(QOL_FIXES)
     print_generic_string(220, 145, textCatch);
 #endif
     gDPSetEnvColor(gDisplayListHead++, 255, 255, 255, gDialogTextAlpha);
     print_generic_string(74, 147, name);
-#if defined(VERSION_JP) || defined(VERSION_SH)
+#if defined(VERSION_JP) || defined(VERSION_SH) || defined(QOL_FIXES)
     print_generic_string(218, 147, textCatch);
 #endif
     gSPDisplayList(gDisplayListHead++, dl_ia_text_end);
@@ -2966,7 +3036,7 @@ void render_save_confirmation(s16 x, s16 y, s8 *index, s16 sp6e)
         { TEXT_SAVE_AND_QUIT_DE }
     };
 
-    u8 textSaveExitGame[][26] = { // New function to exit game
+    u8 textSaveExitGame[][28] = { // New function to exit game
         { TEXT_SAVE_EXIT_GAME },
         { TEXT_SAVE_EXIT_GAME_FR },
         { TEXT_SAVE_EXIT_GAME_DE }

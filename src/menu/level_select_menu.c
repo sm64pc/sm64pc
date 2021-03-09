@@ -27,7 +27,7 @@ static char gLevelSelect_StageNamesText[64][16] = {
 
 static u16 gDemoCountdown = 0;
 #ifndef VERSION_JP
-static s16 D_U_801A7C34 = 1;
+static s16 playMarioGreeting = 1;
 static s16 gameOverNotPlayed = 1;
 #endif
 
@@ -61,6 +61,9 @@ int run_press_start_demo_timer(s32 timer) {
                 timer = (s8)((struct DemoInput *) gDemo.targetAnim)->timer;
                 gCurrSaveFileNum = 1;
                 gCurrActNum = 1;
+                #ifndef VERSION_JP
+                playMarioGreeting = 1;
+                #endif
             }
         } else { // activity was detected, so reset the demo countdown.
             gDemoCountdown = 0;
@@ -69,9 +72,25 @@ int run_press_start_demo_timer(s32 timer) {
     return timer;
 }
 
+#ifndef QOL_FIXES
+#ifndef TARGET_WEB
 extern int gDemoInputListID_2;
+#endif
+#endif
+#ifdef QOL_FIXES
+extern unsigned int gDemoInputListID_2;
+#endif
+#ifdef TARGET_WEB
+extern unsigned int gDemoInputListID_2;
+#endif
 extern int gPressedStart;
 
+#ifndef QOL_FIXES
+#ifndef TARGET_WEB
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wsign-compare"
+#endif
+#endif
 int start_demo(int timer)
 {
 	gCurrDemoInput = NULL;
@@ -91,6 +110,11 @@ int start_demo(int timer)
     gCurrActNum = 6;
     return timer;
 }
+#ifndef QOL_FIXES
+#ifndef TARGET_WEB
+#pragma GCC diagnostic pop
+#endif
+#endif
 
 // input loop for the level select menu. updates the selected stage
 // count if an input was received. signals the stage to be started
@@ -162,9 +186,13 @@ int intro_default(void) {
     s32 sp1C = 0;
 
 #ifndef VERSION_JP
-    if (D_U_801A7C34 == 1) {
-        play_sound(SOUND_MARIO_HELLO, gDefaultSoundArgs);
-        D_U_801A7C34 = 0;
+    if (playMarioGreeting == 1) {
+        if (gGlobalTimer < 0x81) {
+            play_sound(SOUND_MARIO_HELLO, gDefaultSoundArgs);
+        } else {
+            play_sound(SOUND_MARIO_PRESS_START_TO_PLAY, gDefaultSoundArgs);
+        }
+        playMarioGreeting = 0;
     }
 #endif
     print_intro_text();
@@ -173,7 +201,7 @@ int intro_default(void) {
         play_sound(SOUND_MENU_STAR_SOUND, gDefaultSoundArgs);
         sp1C = 100 + gDebugLevelSelect;
 #ifndef VERSION_JP        
-        D_U_801A7C34 = 1;
+        playMarioGreeting = 1;
 #endif
     }
     return run_press_start_demo_timer(sp1C);

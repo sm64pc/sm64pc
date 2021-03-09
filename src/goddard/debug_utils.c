@@ -410,9 +410,19 @@ void fatal_printf(const char *fmt, ...) {
                     case 's':
                         gd_printf("%s", va_arg(vl, char *));
                         break;
+                    #ifndef TARGET_WEB
                     case 'c':
+                        #ifndef QOL_FIXES
                         gd_printf("%c", va_arg(vl, char));
+                        #else
+                        gd_printf("%c", va_arg(vl, int));
+                        #endif
                         break;
+                    #else
+                    case 'c':
+                        gd_printf("%c", va_arg(vl, int));
+                        break;
+                    #endif
                     case 'x':
                         gd_printf("%x", va_arg(vl, s32));
                         break;

@@ -460,7 +460,7 @@ void spawn_objects_from_info(UNUSED s32 unused, struct SpawnInfo *spawnInfo) {
     //! (Spawning Displacement) On the Japanese version, Mario's platform object
     //  isn't cleared when transitioning between areas. This can cause Mario to
     //  receive displacement after spawning.
-#ifndef VERSION_JP
+#if BUGFIX_SPAWNING_DISPLACEMENT
     clear_mario_platform();
 #endif
 
@@ -563,7 +563,11 @@ void clear_objects(void) {
 void update_terrain_objects(void) {
     gObjectCounter = update_objects_in_list(&gObjectLists[OBJ_LIST_SPAWNER]);
     //! This was meant to be +=
+    #ifdef QOL_FIXES
+    gObjectCounter += update_objects_in_list(&gObjectLists[OBJ_LIST_SURFACE]);
+    #else
     gObjectCounter = update_objects_in_list(&gObjectLists[OBJ_LIST_SURFACE]);
+    #endif
 }
 
 /**
@@ -602,7 +606,11 @@ void unload_deactivated_objects(void) {
 /**
  * Unused profiling function.
  */
+#ifndef TARGET_WEB
 static u16 unused_get_elapsed_time(u64 *cycleCounts, s32 index) {
+#else
+UNUSED static u16 unused_get_elapsed_time(u64 *cycleCounts, s32 index) {
+#endif
     u16 time;
     f64 cycles;
 

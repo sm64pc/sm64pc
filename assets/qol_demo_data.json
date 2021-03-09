@@ -20,11 +20,7 @@
 {
     "table": [
         {"demofile":"bitdw", "ifdef":["VERSION_US"]},
-        
-        /* Whomp's Fortress has the wrong size.
-           The original entries probably manually input the sizes. */
-        {"demofile":"wf", "extraSize":368},
-        
+        {"demofile":"wf"},
         {"demofile":"ccm"},
         {"demofile":"bbh"},
         {"demofile":"jrb"},

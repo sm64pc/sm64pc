@@ -195,6 +195,11 @@
 #define /*0x0FC*/ oBackAndForthPlatformUnkFC  OBJECT_FIELD_F32(0x1D)
 #define /*0x100*/ oBackAndForthPlatformUnk100 OBJECT_FIELD_F32(0x1E)
 
+/* Beta Trampoline */
+#ifdef QOL_FIXES
+#define /*0x098*/ oBetaTrampolineAdditiveYVel OBJECT_FIELD_F32(0x04)
+#endif
+
 /* Bird */
 #define /*0x0F4*/ oBirdSpeed       OBJECT_FIELD_F32(0x1B)
 #define /*0x0F8*/ oBirdTargetPitch OBJECT_FIELD_S32(0x1C)
@@ -593,6 +598,9 @@
 #define /*0x100*/ oKingBobombUnk100 OBJECT_FIELD_S32(0x1E)
 #define /*0x104*/ oKingBobombUnk104 OBJECT_FIELD_S32(0x1F)
 #define /*0x108*/ oKingBobombUnk108 OBJECT_FIELD_S32(0x20)
+#ifdef QOL_FIXES
+#define /*0x108*/ oKingBobombBlinkTimer OBJECT_FIELD_S32(0x21)
+#endif
 
 /* Klepto */
 #define /*0x0F4*/ oKleptoDistanceToTarget      OBJECT_FIELD_F32(0x1B)

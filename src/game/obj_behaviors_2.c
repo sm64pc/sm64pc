@@ -564,7 +564,11 @@ static s32 obj_resolve_object_collisions(s32 *targetYaw) {
 
             dx = otherObject->oPosX - o->oPosX;
             dz = otherObject->oPosZ - o->oPosZ;
+            #ifndef QOL_FIXES
             angle = atan2s(dx, dz); //! This should be atan2s(dz, dx)
+            #else
+            angle = atan2s(dz, dx);
+            #endif
 
             radius = o->hitboxRadius;
             otherRadius = otherObject->hitboxRadius;
@@ -628,8 +632,10 @@ static void obj_die_if_health_non_positive(void) {
         } else {
             obj_spawn_loot_yellow_coins(o, o->oNumLootCoins, 20.0f);
         }
+        #ifndef QOL_FIXES
         // This doesn't do anything
         obj_spawn_loot_yellow_coins(o, o->oNumLootCoins, 20.0f);
+        #endif
 
         if (o->oHealth < 0) {
             cur_obj_hide();
@@ -640,7 +646,11 @@ static void obj_die_if_health_non_positive(void) {
     }
 }
 
+#ifndef TARGET_WEB
 static void obj_unused_die(void) {
+#else
+UNUSED static void obj_unused_die(void) {
+#endif
     o->oHealth = 0;
     obj_die_if_health_non_positive();
 }

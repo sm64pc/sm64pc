@@ -1071,17 +1071,24 @@ void level_set_transition(s16 length, void (*updateFunction)(s16 *)) {
 s32 play_mode_change_area(void) {
     //! This maybe was supposed to be sTransitionTimer == -1? sTransitionUpdate
     // is never set to -1.
+    #ifndef QOL_FIXES
     if (sTransitionUpdate == (void (*)(s16 *)) - 1) {
+    #else
+    if (sTransitionTimer == -1) {
+    #endif
         update_camera(gCurrentArea->camera);
     } else if (sTransitionUpdate != NULL) {
         sTransitionUpdate(&sTransitionTimer);
     }
 
     if (sTransitionTimer > 0) {
+        #ifndef QOL_FIXES
         sTransitionTimer -= 1;
+        #else
+        sTransitionTimer--;
+        #endif
     }
 
-    //! If sTransitionTimer is -1, this will miss.
     if (sTransitionTimer == 0) {
         sTransitionUpdate = NULL;
         set_play_mode(PLAY_MODE_NORMAL);
@@ -1098,7 +1105,6 @@ s32 play_mode_change_level(void) {
         sTransitionUpdate(&sTransitionTimer);
     }
 
-    //! If sTransitionTimer is -1, this will miss.
     if (--sTransitionTimer == -1) {
         gHudDisplay.flags = HUD_DISPLAY_NONE;
         sTransitionTimer = 0;
@@ -1117,7 +1123,11 @@ s32 play_mode_change_level(void) {
 /**
  * Unused play mode. Doesn't call transition update and doesn't reset transition at the end.
  */
+#ifndef TARGET_WEB
 static s32 play_mode_unused(void) {
+#else
+UNUSED static s32 play_mode_unused(void) {
+#endif
     if (--sTransitionTimer == -1) {
         gHudDisplay.flags = HUD_DISPLAY_NONE;
 
@@ -1145,7 +1155,11 @@ s32 update_level(void) {
             changeLevel = play_mode_change_area();
             break;
         case PLAY_MODE_CHANGE_LEVEL:
+            #ifdef USE_UNUSED_PLAY_STATE
+            changeLevel = play_mode_unused();
+            #else
             changeLevel = play_mode_change_level();
+            #endif
             break;
         case PLAY_MODE_FRAME_ADVANCE:
             changeLevel = play_mode_frame_advance();

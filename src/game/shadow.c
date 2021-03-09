@@ -1,6 +1,9 @@
 #include <PR/ultratypes.h>
 #include <PR/gbi.h>
 #include <math.h>
+#ifdef QOL_FIXES
+#include "include/libc/math.h"
+#endif
 
 #include "engine/math_util.h"
 #include "engine/surface_collision.h"
@@ -190,6 +193,9 @@ f32 get_water_level_below_shadow(struct Shadow *s) {
     }
     //! @bug Missing return statement. This compiles to return `waterLevel`
     //! incidentally.
+#if defined(QOL_FIXES) || defined(TARGET_WEB)
+    return waterLevel;
+#endif
 }
 
 /**
@@ -214,6 +220,11 @@ s8 init_shadow(struct Shadow *s, f32 xPos, f32 yPos, f32 zPos, s16 shadowScale, 
     if (gEnvironmentRegions != 0) {
         waterLevel = get_water_level_below_shadow(s);
     }
+#ifdef QOL_FIXES
+    else {
+        waterLevel = 0;
+    }
+#endif
     if (gShadowAboveWaterOrLava) {
         //! @bug Use of potentially undefined variable `waterLevel`
         s->floorHeight = waterLevel;
@@ -358,8 +369,13 @@ void get_vertex_coords(s8 index, s8 shadowVertexType, s8 *xCoord, s8 *zCoord) {
  */
 void calculate_vertex_xyz(s8 index, struct Shadow s, f32 *xPosVtx, f32 *yPosVtx, f32 *zPosVtx,
                           s8 shadowVertexType) {
+    #ifndef QOL_FIXES
     f32 tiltedScale = cosf(s.floorTilt * M_PI / 180.0) * s.shadowScale;
     f32 downwardAngle = s.floorDownwardAngle * M_PI / 180.0;
+    #else
+    f32 tiltedScale = cosf(s.floorTilt * M__PI / 180.0) * s.shadowScale;
+    f32 downwardAngle = s.floorDownwardAngle * M__PI / 180.0;
+    #endif
     f32 halfScale;
     f32 halfTiltedScale;
     s8 xCoordUnit;
